@@ -18,19 +18,41 @@ export default function (plopfileApi) {
 		return yield plopfileApi.inquirer.prompt(genObject.prompts);
 	});
 
+	const runGeneratorInputs = co.wrap(function* (genObject) {
+		if (genObject.inputs == null) {
+			throw Error(`${genObject.name} has no inputs`);
+		}
+		var yielder = genObject.inputs(genObject);
+		if (!yielder.then) {
+			yielder = new Promise(resolve => {
+				resolve(yielder);
+			});
+		}
+		return yield yielder;
+	});
+
+
 	// Run the actions for this generator
 	const runGeneratorActions = co.wrap(function* (genObject, data) {
-		var changes = [];          // array of changed made by the actions
-		var failures = [];         // array of actions that failed
-		var {actions} = genObject; // the list of actions to execute
+		var changes = []; // array of changed made by the actions
+		var failures = []; // array of actions that failed
+		var {
+			actions
+		} = genObject; // the list of actions to execute
 		const customActionTypes = getCustomActionTypes();
-		const buildInActions = { add, addMany, modify };
+		const buildInActions = {
+			add,
+			addMany,
+			modify
+		};
 		const actionTypes = Object.assign({}, customActionTypes, buildInActions);
 
 		abort = false;
 
 		// if action is a function, run it to get our array of actions
-		if (typeof actions === 'function') { actions = actions(data); }
+		if (typeof actions === 'function') {
+			actions = actions(data);
+		}
 
 		// if actions are not defined... we cannot proceed.
 		if (actions == null) {
@@ -58,7 +80,9 @@ export default function (plopfileApi) {
 			const actionLogic = (actionIsFunction ? action : actionTypes[actionCfg.type]);
 
 			if (typeof actionLogic !== 'function') {
-				if (actionCfg.abortOnFail !== false) { abort = true; }
+				if (actionCfg.abortOnFail !== false) {
+					abort = true;
+				}
 				failures.push({
 					type: action.type || '',
 					path: action.path || '',
@@ -70,12 +94,15 @@ export default function (plopfileApi) {
 			try {
 				const actionResult = yield executeActionLogic(actionLogic, actionCfg, data);
 				changes.push(actionResult);
-			} catch(failure) {
+			} catch (failure) {
 				failures.push(failure);
 			}
 		}
 
-		return { changes, failures };
+		return {
+			changes,
+			failures
+		};
 	});
 
 	// handle action logic
@@ -109,13 +136,20 @@ export default function (plopfileApi) {
 	// provide a function to handle action errors in a uniform way
 	function makeErrorLogger(type, path, abortOnFail) {
 		return function (error) {
-			if (abortOnFail !== false) { abort = true; }
-			return { type, path, error };
+			if (abortOnFail !== false) {
+				abort = true;
+			}
+			return {
+				type,
+				path,
+				error
+			};
 		};
 	}
 
 	return {
 		runGeneratorActions,
+		runGeneratorInputs,
 		runGeneratorPrompts
 	};
 }
