@@ -31,9 +31,7 @@ export default function (plopfileApi) {
 		return yield yielder;
 	});
 
-
-	// Run the actions for this generator
-	const runGeneratorActions = co.wrap(function* (genObject, data) {
+	function* generate(genObject, data) {
 		var changes = []; // array of changed made by the actions
 		var failures = []; // array of actions that failed
 		var {
@@ -103,6 +101,22 @@ export default function (plopfileApi) {
 			changes,
 			failures
 		};
+	}
+
+	// Run the actions for this generator
+	const runGeneratorActions = co.wrap(generate);
+
+	const runGeneratorListActions = co.wrap(function* (genObject, data) {
+		// TODO: async loop
+		let results = data.map(co.wrap(function* (item) {
+			let result = yield generate(genObject, item);
+			return result;
+		}));
+		let allResults = yield Promise.all(results);
+		return yield allResults.reduce((acc, val) => {
+			Object.assign(acc, val);
+			return acc;
+		}, {});
 	});
 
 	// handle action logic
@@ -149,6 +163,7 @@ export default function (plopfileApi) {
 
 	return {
 		runGeneratorActions,
+		runGeneratorListActions,
 		runGeneratorInputs,
 		runGeneratorPrompts
 	};

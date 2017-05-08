@@ -192,6 +192,7 @@ function nodePlop(plopfilePath = '', plopCfg = {}) {
 			}
 
 			return Object.assign({}, generator, {
+				runListActions: (data) => runner.runGeneratorListActions(generator, data),
 				runActions: (data) => runner.runGeneratorActions(generator, data),
 				runInputs: () => runner.runGeneratorInputs(generator),
 				runPrompts: () => runner.runGeneratorPrompts(generator)
