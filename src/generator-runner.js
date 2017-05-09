@@ -31,12 +31,15 @@ export default function (plopfileApi) {
 		return yield yielder;
 	});
 
-	function* generate(genObject, data) {
+	function* generate(genObject, data, opts = {}) {
 		var changes = []; // array of changed made by the actions
 		var failures = []; // array of actions that failed
 		var {
 			actions
 		} = genObject; // the list of actions to execute
+		if (opts && opts.actions) {
+			actions = actions[opts.actions];
+		}
 		const customActionTypes = getCustomActionTypes();
 		const buildInActions = {
 			add,
@@ -49,7 +52,7 @@ export default function (plopfileApi) {
 
 		// if action is a function, run it to get our array of actions
 		if (typeof actions === 'function') {
-			actions = actions(data);
+			actions = actions(data, opts);
 		}
 
 		// if actions are not defined... we cannot proceed.
@@ -90,7 +93,7 @@ export default function (plopfileApi) {
 			}
 
 			try {
-				const actionResult = yield executeActionLogic(actionLogic, actionCfg, data);
+				const actionResult = yield executeActionLogic(actionLogic, actionCfg, data, opts);
 				changes.push(actionResult);
 			} catch (failure) {
 				failures.push(failure);
@@ -106,10 +109,10 @@ export default function (plopfileApi) {
 	// Run the actions for this generator
 	const runGeneratorActions = co.wrap(generate);
 
-	const runGeneratorListActions = co.wrap(function* (genObject, data) {
+	const runGeneratorListActions = co.wrap(function* (genObject, data, opts = {}) {
 		// TODO: async loop
 		let results = data.map(co.wrap(function* (item) {
-			let result = yield generate(genObject, item);
+			let result = yield generate(genObject, item, opts);
 			return result;
 		}));
 		let allResults = yield Promise.all(results);
@@ -120,12 +123,12 @@ export default function (plopfileApi) {
 	});
 
 	// handle action logic
-	const executeActionLogic = co.wrap(function* (action, cfg, data) {
+	const executeActionLogic = co.wrap(function* (action, cfg, data, opts = {}) {
 		const failure = makeErrorLogger(cfg.type || 'function', '', cfg.abortOnFail);
 
 		// convert any returned data into a promise to
 		// return and wait on
-		return yield Promise.resolve(action(data, cfg, plopfileApi)).then(
+		return yield Promise.resolve(action(data, cfg, plopfileApi, opts)).then(
 			// show the resolved value in the console
 			result => ({
 				type: cfg.type || 'function',

@@ -192,8 +192,8 @@ function nodePlop(plopfilePath = '', plopCfg = {}) {
 			}
 
 			return Object.assign({}, generator, {
-				runListActions: (data) => runner.runGeneratorListActions(generator, data),
-				runActions: (data) => runner.runGeneratorActions(generator, data),
+				runListActions: (data, opts) => runner.runGeneratorListActions(generator, data, opts),
+				runActions: (data, opts) => runner.runGeneratorActions(generator, data, opts),
 				runInputs: () => runner.runGeneratorInputs(generator),
 				runPrompts: () => runner.runGeneratorPrompts(generator)
 			});
@@ -209,8 +209,8 @@ function nodePlop(plopfilePath = '', plopCfg = {}) {
 		const plopFileName = path.basename(plopfilePath);
 		setPlopfilePath(plopfilePath);
 		loadPackageJson();
-
-		require(path.join(plopfilePath, plopFileName))(plopfileApi, plopCfg);
+		var fullPlopFilePath = path.join(plopfilePath, plopFileName);
+		require(fullPlopFilePath)(plopfileApi, plopCfg);
 	} else {
 		setPlopfilePath(process.cwd());
 		loadPackageJson();

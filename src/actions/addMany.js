@@ -4,12 +4,14 @@ import globby from 'globby';
 import actionInterfaceTest from './_common-action-interface-check';
 import addFile from './_common-action-add-file';
 
-export default co.wrap(function* (data, cfg, plop) {
+export default co.wrap(function* (data, cfg, plop, opts = {}) {
 	const cfgWithCommonInterface = Object.assign({}, cfg, {
 		path: cfg.destination
 	});
 	const interfaceTestResult = actionInterfaceTest(cfgWithCommonInterface);
-	if (interfaceTestResult !== true) { throw interfaceTestResult; }
+	if (interfaceTestResult !== true) {
+		throw interfaceTestResult;
+	}
 
 	const templateFiles = resolveTemplateFiles(cfg.templateFiles, plop);
 	const filesAdded = [];
@@ -19,7 +21,7 @@ export default co.wrap(function* (data, cfg, plop) {
 			templateFile: templateFile
 		});
 
-		const addedPath = yield addFile(data, fileCfg, plop);
+		const addedPath = yield addFile(data, fileCfg, plop, opts);
 		filesAdded.push(addedPath);
 	}
 
@@ -27,8 +29,9 @@ export default co.wrap(function* (data, cfg, plop) {
 });
 
 function resolveTemplateFiles(templateFilesGlob, plop) {
-	return globby.sync([templateFilesGlob], { cwd: plop.getPlopfilePath() })
-		.filter(isFile);
+	return globby.sync([templateFilesGlob], {
+		cwd: plop.getPlopfilePath()
+	}).filter(isFile);
 }
 
 function isFile(file) {

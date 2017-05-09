@@ -1,14 +1,21 @@
 import fs from 'fs';
 import path from 'path';
 import AvaTest from './_base-ava-test';
-const { test, mockPath, testSrcPath, nodePlop } = (new AvaTest(__filename));
+const {
+	test,
+	mockPath,
+	testSrcPath,
+	nodePlop
+} = (new AvaTest(__filename));
 
 const plop = nodePlop(`${mockPath}/plopfile.js`);
 const multipleAdds = plop.getGenerator('multiple-adds');
 var multipleAddsResult;
 
 test.before(() => {
-	return multipleAdds.runActions({ name: 'John Doe' }).then(function (res) {
+	return multipleAdds.runActions({
+		name: 'John Doe'
+	}).then(function (res) {
 		multipleAddsResult = res;
 	});
 });
