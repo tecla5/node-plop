@@ -110,7 +110,6 @@ export default function (plopfileApi) {
 	const runGeneratorActions = co.wrap(generate);
 
 	const runGeneratorListActions = co.wrap(function* (genObject, data, opts = {}) {
-		// TODO: async loop
 		let results = data.map(co.wrap(function* (item) {
 			let result = yield generate(genObject, item, opts);
 			return result;
