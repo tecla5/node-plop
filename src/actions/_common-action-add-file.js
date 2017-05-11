@@ -41,7 +41,7 @@ export default function* addFile(data, cfg, plop, opts = {}) {
 		}
 
 		// return the written file or the added file path (relative to the destination path)
-		return opts.fsys ? fsys.config : fileDestPath.replace(path.resolve(plop.getDestBasePath()), '');
+		return opts.fsys ? fsys.config.lastWritten : fileDestPath.replace(path.resolve(plop.getDestBasePath()), '');
 	} catch (err) {
 		if (typeof err === 'string') {
 			throw err;
