@@ -127,11 +127,13 @@ export default function (plopfileApi) {
 
 		// convert any returned data into a promise to
 		// return and wait on
-		return yield Promise.resolve(action(data, cfg, plopfileApi, opts)).then(
+		const actionResult = action(data, cfg, plopfileApi, opts);
+		return yield Promise.resolve(actionResult).then(
 			// show the resolved value in the console
 			result => ({
 				type: cfg.type || 'function',
-				path: colors.blue(result.toString())
+				path: colors.blue(result.toString()),
+				vfs: actionResult
 			}),
 			// a rejected promise is treated as a failure
 			function (err) {

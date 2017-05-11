@@ -3,8 +3,12 @@ import * as fspp from '../fs-promise-proxy';
 
 export default function* addFile(data, cfg, plop, opts = {}) {
 	// if not already an absolute path, make an absolute path from the basePath (plopfile location)
-	const makeTmplPath = p => path.resolve(plop.getPlopfilePath(), p);
-	const makeDestPath = p => path.resolve(plop.getDestBasePath(), p);
+
+	let tmplBaseBath = plop.getPlopfilePath();
+	let destBasePath = plop.getDestBasePath();
+
+	const makeTmplPath = p => path.resolve(tmplBaseBath, p);
+	const makeDestPath = p => path.resolve(destBasePath, p);
 
 	var {
 		template
@@ -16,26 +20,28 @@ export default function* addFile(data, cfg, plop, opts = {}) {
 	try {
 		if (cfg.templateFile) {
 			let tplPath = plop.renderString(cfg.templateFile, data);
-			template = yield fspp.readFile(makeTmplPath(tplPath));
+			let tplFilePath = makeTmplPath(tplPath);
+			template = yield fspp.readFile(tplFilePath);
 		}
 		if (template == null) {
 			template = '';
 		}
 
+		let fsys = opts.fsys || fspp;
+
 		// check path
-		const pathExists = yield fspp.fileExists(fileDestPath);
+		const pathExists = yield fsys.fileExists(fileDestPath);
 
 		if (pathExists) {
 			throw 'File already exists';
 		} else {
-			yield fspp.makeDir(path.dirname(fileDestPath));
+			yield fsys.makeDir(path.dirname(fileDestPath));
 			var templateResult = plop.renderString(template, data);
-			yield fspp.writeFile(fileDestPath, templateResult);
+			yield fsys.writeFile(fileDestPath, templateResult);
 		}
 
-		// return the added file path (relative to the destination path)
-		return fileDestPath.replace(path.resolve(plop.getDestBasePath()), '');
-
+		// return the written file or the added file path (relative to the destination path)
+		return opts.fsys ? fsys.config : fileDestPath.replace(path.resolve(plop.getDestBasePath()), '');
 	} catch (err) {
 		if (typeof err === 'string') {
 			throw err;

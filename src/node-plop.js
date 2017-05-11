@@ -8,6 +8,9 @@ import bakedInHelpers from './baked-in-helpers';
 import generatorRunner from './generator-runner';
 
 function nodePlop(plopfilePath = '', plopCfg = {}) {
+	if (typeof plopfilePath === 'object') {
+		plopCfg = plopfilePath;
+	}
 
 	var pkgJson = {};
 	var defaultInclude = {
@@ -78,9 +81,16 @@ function nodePlop(plopfilePath = '', plopCfg = {}) {
 
 	const setDefaultInclude = inc => defaultInclude = inc;
 	const getDefaultInclude = () => defaultInclude;
-	const getDestBasePath = () => destBasePath || plopfilePath;
-	const getPlopfilePath = () => plopfilePath;
-	const setPlopfilePath = filePath => plopfilePath = path.dirname(filePath);
+	const getDestBasePath = () => {
+		return destBasePath || plopCfg.rootPath || plopfilePath;
+	};
+	const getPlopfilePath = () => {
+		return typeof plopfilePath === 'string' ? plopfilePath : plopfilePath.templatesPath;
+	};
+
+	const setPlopfilePath = filePath => {
+		plopfilePath = path.dirname(filePath);
+	};
 
 	function load(targets, loadCfg = {}, includeOverride) {
 		if (typeof targets === 'string') {
@@ -144,12 +154,15 @@ function nodePlop(plopfilePath = '', plopCfg = {}) {
 		}
 	}
 
+	const runGenerator = require('./do-the-plop');
+
 	/////////
 	// the API that is exposed to the plopfile when it is executed
 	// it differs from the nodePlopApi in that it does not include the
 	// generator runner methods
 	//
 	const plopfileApi = {
+		runGenerator,
 		setPrompt,
 		renderString,
 		inquirer,
@@ -181,7 +194,7 @@ function nodePlop(plopfilePath = '', plopCfg = {}) {
 
 	// the runner for this instance of the nodePlop api
 	const runner = generatorRunner(plopfileApi);
-	const nodePlopApi = Object.assign({}, plopfileApi, {
+	let nodePlopApi = Object.assign({}, plopfileApi, {
 		getGenerator(name) {
 			var generator = plopfileApi.getGenerator(name);
 
@@ -190,7 +203,6 @@ function nodePlop(plopfilePath = '', plopCfg = {}) {
 			if (generator.proxy) {
 				return generator.proxy.getGenerator(generator.proxyName);
 			}
-
 			return Object.assign({}, generator, {
 				runListActions: (data, opts) => runner.runGeneratorListActions(generator, data, opts),
 				runActions: (data, opts) => runner.runGeneratorActions(generator, data, opts),
@@ -201,19 +213,24 @@ function nodePlop(plopfilePath = '', plopCfg = {}) {
 		setGenerator(name, config) {
 			const g = plopfileApi.setGenerator(name, config);
 			return this.getGenerator(g.name);
-		}
+		},
 	});
 
-	if (plopfilePath) {
-		plopfilePath = path.resolve(plopfilePath);
-		const plopFileName = path.basename(plopfilePath);
-		setPlopfilePath(plopfilePath);
-		loadPackageJson();
-		var fullPlopFilePath = path.join(plopfilePath, plopFileName);
-		require(fullPlopFilePath)(plopfileApi, plopCfg);
-	} else {
-		setPlopfilePath(process.cwd());
-		loadPackageJson();
+	if (typeof plopfilePath === 'string') {
+		if (plopfilePath) {
+			plopfilePath = path.resolve(plopfilePath);
+			const plopFileName = path.basename(plopfilePath);
+			setPlopfilePath(plopfilePath);
+			loadPackageJson();
+			var fullPlopFilePath = path.join(plopfilePath, plopFileName);
+			require(fullPlopFilePath)(plopfileApi, plopCfg);
+		} else {
+			setPlopfilePath(process.cwd());
+			loadPackageJson();
+		}
+	}
+	if (typeof plopfilePath === 'object') {
+		plopfileApi.setGenerator('default', plopfilePath);
 	}
 
 	return nodePlopApi;
