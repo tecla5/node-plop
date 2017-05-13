@@ -3,7 +3,8 @@ var chalk = require('chalk')
 /////
 // everybody to the plop!
 //
-module.exports = function doThePlop(generator, opts = {}, cb) {
+module.exports = function doThePlop(generator, opts, cb) {
+  opts = opts || {}
   generator.runInputs().then(inputs => {
       var actionExecName = Array.isArray(inputs) ? 'runListActions' : 'runActions'
       if (inputs.list && inputs.item) {
