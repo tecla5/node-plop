@@ -1,15 +1,7 @@
 var chalk = require('chalk')
-
-function logger(opts) {
-  let io = opts.io || console
-  return function (name) {
-    return function (...msgs) {
-      if (opts.logging) {
-        io.log(name, ...msgs)
-      }
-    }
-  }
-}
+import {
+  logger
+} from './logger'
 
 /////
 // everybody to the plop!

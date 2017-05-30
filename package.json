@@ -1,5 +1,5 @@
 {
-  "name": "node-plop",
+  "name": "@tecla5/node-plop",
   "version": "0.5.5",
   "description": "programmatic plopping for fun and profit",
   "main": "lib/index.js",

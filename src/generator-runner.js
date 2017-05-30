@@ -11,6 +11,10 @@ function error(msg, data) {
 	throw Error(msg);
 }
 
+import {
+	logger
+} from './logger'
+
 export default function (plopfileApi) {
 	var abort;
 
