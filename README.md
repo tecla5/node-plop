@@ -15,7 +15,71 @@ const plop = nodePlop(`./path/to/plopfile.js`);
 const basicAdd = plop.getGenerator('basic-add');
 
 // run all the generator actions using the data specified
-basicAdd.runActions({name: 'this is a test'}).then(function (results) {
+basicAdd.runActions({name: 'this is a test'}, {
+  logging: true
+}).then(function (results) {
   // do something after the actions have run
 });
+```
+
+### The promised way
+
+```js
+let results = await basicAdd.runActions({name: 'this is a test'}, {
+  logging: true
+})
+console.log(results)
+```
+
+### Run as library
+
+```js
+module.exports = async function run(obj, opts = {}) {
+  let data = Object.assign(obj.data, {
+    root: opts.root || opts.rootPath || 'app',
+    fsys: vfs(opts)
+  })
+
+  // can we pass empty action list?
+  let actions = {
+    list: [],
+    // list: (_actions.file.list || []).concat(customActions(data, opts)),
+    item: _actions.vfs.item
+  }
+
+  console.log({
+    actions
+  })
+
+  // we need to pass data as inputs?
+  let plopConfig = config(data, actions)
+  console.log({
+    plopConfig
+  })
+
+  let plop = nodePlop(plopConfig)
+  console.log({
+    plop
+  })
+
+  // We declare a new generator called "default"
+  let generator = plop.setGenerator('default', plopConfig)
+
+  function extractVfs(change) {
+    return change.vfs
+  }
+
+  console.log({
+    doThePlop,
+    generator
+  });
+
+  let results = await doThePlop(generator, {
+    logging: true
+  })
+  console.log('result', results)
+  console.log('first change', result.changes[0].vfs)
+  let fileChanges = result.changes.map(extractVfs)
+  return fileChanges
+}
 ```
