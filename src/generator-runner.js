@@ -6,6 +6,11 @@ import add from './actions/add';
 import addMany from './actions/addMany';
 import modify from './actions/modify';
 
+function error(msg, data) {
+	console.error(msg, data)
+	throw Error(msg);
+}
+
 export default function (plopfileApi) {
 	var abort;
 
@@ -13,14 +18,18 @@ export default function (plopfileApi) {
 	// returns a promise that resolves with the user's answers
 	const runGeneratorPrompts = co.wrap(function* (genObject) {
 		if (genObject.prompts == null) {
-			throw Error(`${genObject.name} has no prompts`);
+			error(`${genObject.name} has no prompts`, {
+				genObject
+			});
 		}
 		return yield plopfileApi.inquirer.prompt(genObject.prompts);
 	});
 
 	const runGeneratorInputs = co.wrap(function* (genObject) {
 		if (genObject.inputs == null) {
-			throw Error(`${genObject.name} has no inputs`);
+			error(`${genObject.name} has no inputs`, {
+				genObject
+			});
 		}
 		var yielder = genObject.inputs(genObject);
 		if (!yielder.then) {
@@ -32,14 +41,28 @@ export default function (plopfileApi) {
 	});
 
 	function* generate(genObject, data, opts = {}) {
+		opts = opts || {}
+		opts.createLog = logger(opts)
+		const log = opts.createLog('generate')
+
 		var changes = []; // array of changed made by the actions
 		var failures = []; // array of actions that failed
+		let actions = []
+		let actionType
 		var {
-			actions
+			allActions
 		} = genObject; // the list of actions to execute
 		if (opts && opts.actions) {
-			actions = actions[opts.actions];
+			actionType = opts.actions
+			actions = allActions[actionType];
 		}
+
+		log({
+			allActions,
+			actions,
+			actionType
+		})
+
 		const customActionTypes = getCustomActionTypes();
 		const buildInActions = {
 			add,
@@ -47,6 +70,9 @@ export default function (plopfileApi) {
 			modify
 		};
 		const actionTypes = Object.assign({}, customActionTypes, buildInActions);
+		log({
+			actionTypes
+		})
 
 		abort = false;
 
@@ -57,15 +83,14 @@ export default function (plopfileApi) {
 
 		// if actions are not defined... we cannot proceed.
 		if (actions == null) {
-			throw Error(`${genObject.name} has no actions`);
+			error(`${genObject.name} has no actions (null)`)
 		}
 
 		// if actions are not an array, invalid!
 		if (!(actions instanceof Array)) {
-			console.log({
+			error(`${genObject.name} has invalid actions ${typeof actions}`, {
 				actions
-			})
-			throw Error(`${genObject.name} has invalid actions ${typeof actions}`);
+			});
 		}
 
 		for (let [actionIdx, action] of actions.entries()) {

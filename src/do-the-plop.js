@@ -1,13 +1,35 @@
 var chalk = require('chalk')
 
+function logger(opts) {
+  let io = opts.io || console
+  return function (name) {
+    return function (...msgs) {
+      if (opts.logging) {
+        io.log(name, ...msgs)
+      }
+    }
+  }
+}
+
 /////
 // everybody to the plop!
 //
 module.exports = function doThePlop(generator, opts, cb) {
   opts = opts || {}
+  opts.createLog = logger(opts)
+  const log = opts.createLog('doThePlop')
   generator.runInputs().then(inputs => {
+      log('generator', {
+        inputs
+      })
+
       var actionExecName = Array.isArray(inputs) ? 'runListActions' : 'runActions'
-      if (inputs.list && inputs.item) {
+      log({
+        actionExecName
+      })
+
+      if (inputs.list || inputs.item) {
+        log('doing list and/or item')
         var inputOpts = Object.assign({}, inputs)
         delete inputOpts.item
         delete inputOpts.list
@@ -18,10 +40,21 @@ module.exports = function doThePlop(generator, opts, cb) {
         var itemOpts = Object.assign({}, opts, inputOpts, {
           actions: 'item'
         })
+        log({
+          itemOpts,
+          listOpts
+        })
+
         var listResults = generator.runListActions(inputs.list, listOpts)
         var itemResults = generator.runActions(inputs.item, itemOpts)
+        var allResults = [listResults, itemResults].filter(res => res !== null)
 
-        return Promise.all([listResults, itemResults]);
+        log({
+          listResults,
+          itemResults,
+          allResults
+        })
+        return Promise.all(allResults);
       }
       var actionExec = generator[actionExecName]
       return actionExec(inputs)
