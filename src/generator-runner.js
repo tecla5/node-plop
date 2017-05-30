@@ -62,7 +62,10 @@ export default function (plopfileApi) {
 
 		// if actions are not an array, invalid!
 		if (!(actions instanceof Array)) {
-			throw Error(`${genObject.name} has invalid actions`);
+			console.log({
+				actions
+			})
+			throw Error(`${genObject.name} has invalid actions ${typeof actions}`);
 		}
 
 		for (let [actionIdx, action] of actions.entries()) {
