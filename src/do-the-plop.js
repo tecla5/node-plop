@@ -80,11 +80,15 @@ module.exports = function doThePlop(generator, opts, cb) {
         console.log.apply(console, logs);
       });
       if (cb) {
-        cb(result)
+        cb({
+          result
+        })
       }
     })
     .catch(function (err) {
       console.error(chalk.red('[ERROR]'), err.message, err.stack);
-      process.exit(1);
+      cb({
+        err
+      })
     });
 }
